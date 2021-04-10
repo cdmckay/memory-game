@@ -10,6 +10,8 @@ edition = "2018"
 # A panic handler is needed.  This is a crate with the most basic one.
 # The `leonardo-panic` example shows a more elaborate version.
 panic-halt = "0.2.0"
+# Random numbers
+rand_mt = { version = "4.0.1", default-features = false }
 
 [dependencies.arduino-uno]
 git = "https://github.com/rahix/avr-hal"

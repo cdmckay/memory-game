@@ -6,8 +6,7 @@ extern crate panic_halt;
 
 use arduino_uno::adc;
 use arduino_uno::prelude::*;
-use rand_core::{RngCore, SeedableRng};
-use wyhash::WyRng;
+use oorandom;
 
 // The number of levels
 const MAX_LEVELS: usize = 10;
@@ -24,7 +23,7 @@ fn main() -> ! {
     let button2 = pins.d3.into_pull_up_input(&mut pins.ddr);
     let button3 = pins.d4.into_pull_up_input(&mut pins.ddr);
     let button4 = pins.d5.into_pull_up_input(&mut pins.ddr);
-    let mut buttons = [
+    let buttons = [
         button1.downgrade(),
         button2.downgrade(),
         button3.downgrade(),
@@ -45,24 +44,24 @@ fn main() -> ! {
 
     let mut adc = adc::Adc::new(dp.ADC, Default::default());
     let mut a0 = pins.a0.into_analog_input(&mut adc);
-    let mut rng = WyRng::seed_from_u64(nb::block!(adc.read(&mut a0)).void_unwrap());
+    let mut rng = oorandom::Rand32::new(nb::block!(adc.read(&mut a0)).void_unwrap());
 
     let mut game_running = false;
     let mut game_waiting = false;
 
-    let mut current_level = 4;
+    let mut current_level = 1;
     let mut speed_factor = 5;
 
     let mut correct = false;
 
-    loop {
-        let mut signals: [u32; MAX_LEVELS] = [0; MAX_LEVELS];
-        let mut user_signals: [u32; MAX_LEVELS] = [0; MAX_LEVELS];
+    let mut signals: [u32; MAX_LEVELS] = [0; MAX_LEVELS];
+    let mut user_signals: [u32; MAX_LEVELS] = [0; MAX_LEVELS];
 
+    loop {
         // This generates the LED signal pattern randomly
         if !game_running {
             for i in 0..MAX_LEVELS {
-                signals[i] = rng.next_u32() % 4;
+                signals[i] = rng.rand_range(0..4);
             }
             game_running = true;
         }
@@ -112,12 +111,44 @@ fn main() -> ! {
             }
         }
         if correct {
-            // Show green light
-            leds[1].set_high().void_unwrap();
+            current_level += 1;
+            game_waiting = false;
         } else {
-            // Show red light
-            leds[2].set_high().void_unwrap();
+            current_level = 1;
+            game_running = false;
+            arduino_uno::delay_ms(300);
+            for i in 0..4 {
+                leds[i].set_high().void_unwrap();
+            }
+            arduino_uno::delay_ms(LED_DURATION_MS as u16);
+            for i in 0..4 {
+                leds[i].set_low().void_unwrap();
+            }
+            arduino_uno::delay_ms(200);
+            for i in 0..4 {
+                leds[i].set_high().void_unwrap();
+            }
+            arduino_uno::delay_ms(LED_DURATION_MS as u16);
+            for i in 0..4 {
+                leds[i].set_low().void_unwrap();
+            }
+            arduino_uno::delay_ms(500);
         }
-        loop {}
+
+        if current_level == MAX_LEVELS {
+            game_running = false;
+            current_level = 1;
+            speed_factor += 1;
+            arduino_uno::delay_ms(300);
+            for i in 0..4 {
+                leds[i].set_high().void_unwrap();
+                arduino_uno::delay_ms(200);
+            }
+            for i in 0..4 {
+                leds[i].set_low().void_unwrap();
+                arduino_uno::delay_ms(200);
+            }
+            arduino_uno::delay_ms(500);
+        }
     }
 }

@@ -24,7 +24,7 @@ fi
 if [ $OS = "Linux" ]; then
     SERIAL_PORT="/dev/ttyACM0"
 elif [ $OS = "Mac" ]; then
-    SERIAL_PORT="/dev/cu.usbserial-1410"
+    SERIAL_PORT="/dev/cu.usbserial-1440"
 else
     echo "unsupported OS, things might not work" >&2
     SERIAL_PORT="/dev/ttyACM0"

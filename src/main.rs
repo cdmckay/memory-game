@@ -4,8 +4,10 @@
 // Pull in the panic handler from panic-halt
 extern crate panic_halt;
 
+use arduino_uno::adc;
 use arduino_uno::prelude::*;
-use rand_mt;
+use rand_core::{RngCore, SeedableRng};
+use wyhash::WyRng;
 
 // The number of levels
 const MAX_LEVELS: usize = 10;
@@ -26,7 +28,9 @@ fn main() -> ! {
         led4.downgrade(),
     ];
 
-    let mut mt = rand_mt::Mt19937GenRand32::new_unseeded();
+    let mut adc = adc::Adc::new(dp.ADC, Default::default());
+    let mut a0 = pins.a0.into_analog_input(&mut adc);
+    let mut rng = WyRng::seed_from_u64(nb::block!(adc.read(&mut a0)).void_unwrap());
 
     let mut game_running = false;
     let mut game_waiting = false;
@@ -39,7 +43,7 @@ fn main() -> ! {
 
         if !game_running {
             for i in 0..MAX_LEVELS {
-                signals[i] = mt.next_u32().rem_euclid(4);
+                signals[i] = rng.next_u32() % 4;
             }
             game_running = true;
         }

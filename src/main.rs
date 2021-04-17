@@ -4,8 +4,8 @@
 // Pull in the panic handler from panic-halt
 extern crate panic_halt;
 
-use arduino_uno::adc;
-use arduino_uno::prelude::*;
+use arduino_uno::{adc, hal::port::Pin};
+use arduino_uno::{hal::port::mode::Output, prelude::*};
 use oorandom;
 
 // The number of levels
@@ -67,17 +67,7 @@ fn main() -> ! {
         }
         // This shows the LED signal pattern
         if !game_waiting {
-            arduino_uno::delay_ms(200);
-            let led_delay_ms =
-                LED_DURATION_MS / (1 + (speed_factor / MAX_LEVELS) * (current_level - 1));
-            for i in 0..current_level {
-                let index = signals[i] as usize;
-                let pin = &mut leds[index];
-                pin.set_high().void_unwrap();
-                arduino_uno::delay_ms(led_delay_ms as u16);
-                pin.set_low().void_unwrap();
-                arduino_uno::delay_ms(100 / speed_factor as u16);
-            }
+            show_led_signal_pattern(&signals, &mut leds, current_level, speed_factor);
             game_waiting = true;
         }
         // Check for button presses
@@ -150,5 +140,23 @@ fn main() -> ! {
             }
             arduino_uno::delay_ms(500);
         }
+    }
+}
+
+fn show_led_signal_pattern(
+    signals: &[u32],
+    leds: &mut [Pin<Output>],
+    current_level: usize,
+    speed_factor: usize,
+) -> () {
+    arduino_uno::delay_ms(200);
+    let led_delay_ms = LED_DURATION_MS / (1 + (speed_factor / MAX_LEVELS) * (current_level - 1));
+    for i in 0..current_level {
+        let index = signals[i] as usize;
+        let pin = &mut leds[index];
+        pin.set_high().void_unwrap();
+        arduino_uno::delay_ms(led_delay_ms as u16);
+        pin.set_low().void_unwrap();
+        arduino_uno::delay_ms(100 / speed_factor as u16);
     }
 }

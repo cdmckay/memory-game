@@ -1,5 +1,5 @@
 [package]
-name = "memory-rust"
+name = "memory-game"
 version = "0.1.0"
 authors = ["Cameron McKay <me@cdmckay.org>"]
 edition = "2018"
